@@ -29,7 +29,7 @@ This week:
 
 * [What Problem? Spatial Autocorrelation and Geographic Information Science](https://onlinelibrary.wiley.com/doi/10.1111/j.1538-4632.2009.00769.x) by Goodchild (2009).
 
-* [Chapter 13 "Spatial Autocorrelation"](https://mgimond.github.io/Spatial/spatial-autocorrelation.html) from Intro to GIS and Spatial Analysis by Gimond (2019).
+* [Chapter 13 "Spatial Autocorrelation"](https://mgimond.github.io/Spatial/chp13_0.html) from Intro to GIS and Spatial Analysis by Gimond (2019).
 
 * [Spatial Point Pattern Analysis and Its Application in Geographical Epidemiology](https://www.jstor.org/stable/pdf/622936.pdf) by Gatrell et al. (1996)
 
@@ -69,8 +69,8 @@ LondonWardsMerged <- st_read(here::here("prac6_data",
                                         "statistical-gis-boundaries-london", 
                                         "statistical-gis-boundaries-london", 
                                         "ESRI",
-                                        "London_Ward_CityMerged.shp"))%>%
-  st_transform(.,27700)
+                                        "London_Ward_CityMerged.shp")) %>%
+  st_transform(., 27700)
 
 WardData <- read_csv("https://data.london.gov.uk/download/f33fb38c-cb37-48e3-8298-84c0d3cc5a6c/772d2d64-e8c6-46cb-86f9-e52b4c7851bc/ward-profiles-excel-version.csv",
                     locale = locale(encoding = "latin1"),
@@ -79,9 +79,9 @@ WardData <- read_csv("https://data.london.gov.uk/download/f33fb38c-cb37-48e3-829
 
 LondonWardsMerged <- LondonWardsMerged %>% 
   left_join(WardData, 
-            by = c("GSS_CODE" = "new_code"))%>%
-  dplyr::distinct(GSS_CODE, .keep_all = T)%>%
-  dplyr::select(GSS_CODE, ward_name, average_gcse_capped_point_scores_2014)
+            by = c("GSS_CODE" = "new_code")) %>%
+  distinct(GSS_CODE, .keep_all = T) %>%
+  select(GSS_CODE, ward_name, average_gcse_capped_point_scores_2014)
   
 ```
 
@@ -101,7 +101,7 @@ library(tmap)
 
 BluePlaques <- st_read(here::here("prac6_data",
                                   "open-plaques-london-2018-04-08.geojson")) %>%
-    st_transform(.,27700)
+    st_transform(., 27700)
 
 tmap_mode("plot")
 tm_shape(LondonWardsMerged) +
@@ -153,16 +153,15 @@ check_example <- LondonWardsMerged%>%
 Now we just take the length of each list per polygon and add this as new column...
 
 ```{r echo=TRUE, results='hide', cache=FALSE}
-library(sf)
 points_sf_joined <- LondonWardsMerged%>%
   mutate(n = lengths(st_intersects(., BluePlaquesSub)))%>%
-  janitor::clean_names()%>%
+  clean_names()%>%
   #calculate area
   mutate(area=st_area(.))%>%
   #then density of the points per ward
   mutate(density=n/area)%>%
   #select density and some other variables 
-  dplyr::select(density, ward_name, gss_code, n, average_gcse_capped_point_scores_2014)
+  select(density, ward_name, gss_code, n, average_gcse_capped_point_scores_2014)
 
 ```
 
@@ -326,7 +325,7 @@ By defult all of our autocorrelation tests assume that we have spatailly continu
 Geary's C as well..? This tells us whether **similar values or dissimilar values are clustering**. Here:
 
 * C < 1 indicates that neighbours with similar values are clustered (compared to random chance)
-* C >1  indicates that neighbours with dissimilar values are clustered (compared to random chance). 
+* C > 1  indicates that neighbours with dissimilar values are clustered (compared to random chance). 
 * C = 0 indicates not autocorrelation
 
 
@@ -371,7 +370,7 @@ We should now have an idea about what the main differences between Moran's I and
 
 For Moran's I 
 
-* we are looking at the product of deviaitions from the global mean (subtracting our central value $(z_i - \bar{z})$ and niehgbour $(z_j - \bar{z})$ from the global mean individually, then multiplying them).
+* we are looking at the product of deviaitions from the global mean (subtracting our central value $(z_i - \bar{z})$ and neighbour $(z_j - \bar{z})$ from the global mean individually, then multiplying them).
 
 * If both **deviations are positive then this suggests clustering**
 
@@ -463,7 +462,7 @@ I_i = \frac{(z_i - \bar{z})}{m_2} \sum_{j} w_{ij}(z_j - \bar{z})
   - \(z_k\): is each individual value in the dataset
 
 
-It returns several columns, of most interest is the Z score. A Z-score is **how many standard deviations a value is away (above or below) from the mean**. This allows us to state if our value is significantly different than expected value at this location considering the neighours. 
+It returns several columns, of most interest is the Z score. A Z-score is **how many standard deviations a value is away (above or below) from the mean**. This allows us to state if our value is significantly different than expected value at this location considering the neighbours. 
 
 We are comparing our value of Moran's I to that of an expected value (computed from a separate equation that uses the spatial weight matrix, and therefore considers the neighbouring values). 
 
@@ -531,19 +530,6 @@ We'll set the breaks manually based on the rule that data points >2.58 or <-2.58
 ```{r, cache=FALSE}
 breaks1<-c(-1000,-2.58,-1.96,-1.65,1.65,1.96,2.58,1000)
 ```
-
-Now create a new **diverging colour** brewer palette and reverse the order using `rev()` (reverse) so higher values correspond to red
-
-```{r, cache=FALSE}
-library(RColorBrewer)
-MoranColours<- rev(brewer.pal(7, "RdGy"))
-```
-
-Plot the output
-
-https://andrewmaclachlan.github.io/CASA0005repo/spatial-autocorrelation.html
-
-HERE---reverse colour scale??
 
 ```{r, cache=FALSE}
 
